@@ -1,17 +1,30 @@
-from fastapi import FastAPI, File, UploadFile
-from typing import Annotated
-import asyncio, shutil
+from alembic.util import status
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from .routers import files, db_health
+
 
 app = FastAPI()
 
-@app.get("/")
-def health():
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.include_router(db_health.router)
+app.include_router(files.router)
+
+@app.get("/", tags=['status'])
+def server_status():
     return {"status": "ok"}
 
-@app.post("/file/upload")
-async def upload_file(file: UploadFile=File(...)):
-    
-    with open(f"disc/{file.filename}", "wb") as buffer:
-        await asyncio.to_thread(shutil.copyfileobj, file.file, buffer)
 
-    return {"file_name": file.filename}
+
+
+
+
+  
