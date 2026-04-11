@@ -1,6 +1,7 @@
-import datetime
-from uuid import UUID
 from pydantic import BaseModel
+from uuid import UUID
+from datetime import datetime
+
 
 class FileResponse(BaseModel):
     id: UUID
@@ -13,4 +14,3 @@ class FileResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        arbitrary_types_allowed=True

@@ -1,7 +1,7 @@
 import pytest
 import os
 from unittest.mock import patch, AsyncMock
-from schemas import schemas_file
+from app.schemas import schemas_file
 from database import models
 from test.conftest import session
 
