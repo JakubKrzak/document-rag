@@ -3,6 +3,7 @@ import os
 from unittest.mock import patch, AsyncMock
 from schemas import schemas_file
 from database import models
+from test.conftest import session
 
 
 def test_upload_file_succes(client, session, tmp_path, monkeypatch):
@@ -28,6 +29,7 @@ def test_upload_file_succes(client, session, tmp_path, monkeypatch):
     db_file = session.query(models.File).filter_by(file_name='test.txt').first()
     assert db_file is not None
     assert db_file.hashed_content == expected_hash  
+
 
 def test_upload_the_same_name_files_different_content(client, session, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
@@ -60,3 +62,33 @@ def test_upload_the_same_name_files_different_content(client, session, tmp_path,
     assert (tmp_path / "disc" / f"test.txt_{data2.hashed_content[:8]}").exists()
 
     assert data1.file_path != data2.file_path
+
+
+def test_upload_the_same_content(tmp_path, client, session, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    os.makedirs(tmp_path / "disc", exist_ok=True)
+
+    content = b"Content for 2 files"
+    file1 = {"file": ("file1" ,content, "application/pdf")}
+    file2 = {"file": ("file2" ,content, "application/pdf")}
+
+    res1 = client.post("/file/upload_file", files=file1)
+    assert res1.status_code == 201
+
+    res2 = client.post("/file/upload_file", files=file2)
+    assert res2.status_code == 409
+
+    check_file = session.query(models.File).all()
+    assert len(check_file) == 1
+
+
+@pytest.mark.parametrize("file_name, content, file_type, expected_status_code", [
+    ("file_name_test1", b"content", "application/CSV", 400), #now allowed file_type
+    ("file_name_test", b"", "application/pdf", 400), #missing content empty string
+    ("file_name_test", None, "application/pdf", 400), #missing content None
+    (None, b"content", "application/pdf", 422), #missing file_name    
+])
+def test_empty_value(client, file_name, content, file_type, expected_status_code):
+    res = client.post("/file/upload_file", files={"file": (file_name, content, file_type)})
+    print(res.status_code)
+    assert res.status_code == expected_status_code
