@@ -12,3 +12,5 @@ class Settings(BaseSettings):
 
 
 settings = Settings() 
+
+ALLOWED_TYPES = {"application/pdf", "text/plain", "image/png"}
