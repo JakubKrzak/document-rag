@@ -23,10 +23,20 @@ async def upload_file(file: UploadFile=File(...), db: Session=Depends(get_db)):
     Endpoint for upload files
     
     """
+
+    ALLOWED_TYPES = {"application/pdf", "text/plain", "image/png"}
+
     if not file:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No found file")
 
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"not allowed type")
+
     content = await file.read()
+
+    if not content:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing content")
+    
     current_hashed_content = hash_content.hash_file_content(content)
 
     existing_file = db.query(models.File).filter(models.File.hashed_content == current_hashed_content).first()
