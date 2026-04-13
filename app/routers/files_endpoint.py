@@ -47,7 +47,7 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: Session=Depends(ge
     return file
 
 @router.delete("/delete_file", status_code=status.HTTP_200_OK)
-def delete_file(file_id: str, db: Session=Depends(get_db)):
+def delete_file_enpoint(file_id: str, db: Session=Depends(get_db)):
     file = file_services.find_file_by_id(file_id, db)
     
     if not file:
@@ -58,11 +58,15 @@ def delete_file(file_id: str, db: Session=Depends(get_db)):
 
     return {"message": f"File id: {file_id} has been deleted"}
 
-@router.get("/find_post", status_code=status.HTTP_200_OK)
-def find_post_by_name(file_name: str, db: Session=Depends(get_db)):
+@router.get("/find_file", status_code=status.HTTP_200_OK)
+def find_post_by_name_enpoint(file_name: str, db: Session=Depends(get_db)):
     file = file_services.find_file_by_name(file_name, db)
     
     if not file:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Not found file with id: {file_name}")
     
     return file
+
+@router.get("/all_files", status_code=status.HTTP_200_OK)
+def get_all_files_endpoint(db: Session=Depends(get_db)) -> list[schemas_file.FileResponse]:
+    return file_services.get_all_files(db)
