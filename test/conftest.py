@@ -30,3 +30,9 @@ def client(session):
             session.close()
     main.app.dependency_overrides[get_db] = override_get_db
     yield TestClient(main.app)
+
+@pytest.fixture()
+def create_test_file(client):
+    response = client.post("/file/upload_file",
+                            files={"file": ("test.txt", "content_test", "text/plain")})
+    assert response.status_code == 201
