@@ -46,7 +46,7 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: Session=Depends(ge
 
     return file
 
-@router.delete("/delete_file", status_code=status.HTTP_200_OK)
+@router.delete("/delete_file/{file_id}", status_code=status.HTTP_200_OK)
 def delete_file_enpoint(file_id: str, db: Session=Depends(get_db)):
     file = file_services.find_file_by_id(file_id, db)
     
@@ -58,7 +58,7 @@ def delete_file_enpoint(file_id: str, db: Session=Depends(get_db)):
 
     return {"message": f"File id: {file_id} has been deleted"}
 
-@router.get("/find_file", status_code=status.HTTP_200_OK)
+@router.get("/find_file/{file_name}", status_code=status.HTTP_200_OK)
 def find_post_by_name_enpoint(file_name: str, db: Session=Depends(get_db)):
     file = file_services.find_file_by_name(file_name, db)
     
