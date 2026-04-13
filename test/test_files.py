@@ -1,3 +1,5 @@
+from zipapp import create_archive
+
 import pytest
 import os
 from unittest.mock import patch, AsyncMock
@@ -7,6 +9,11 @@ from test.conftest import session
 
 
 def test_upload_file_succes(client, session, tmp_path, monkeypatch):
+    """
+    
+    Testing upload file
+
+    """
     monkeypatch.chdir(tmp_path)
     os.makedirs(tmp_path / "disc", exist_ok=True)
 
@@ -32,6 +39,12 @@ def test_upload_file_succes(client, session, tmp_path, monkeypatch):
 
 
 def test_upload_the_same_name_files_different_content(client, session, tmp_path, monkeypatch):
+    """
+    
+    Testing upload two files with the same name but diffrent content
+    checking files upload and localization od disc
+    
+    """
     monkeypatch.chdir(tmp_path)
     os.makedirs(tmp_path / "disc", exist_ok=True)
 
@@ -65,6 +78,12 @@ def test_upload_the_same_name_files_different_content(client, session, tmp_path,
 
 
 def test_upload_the_same_content(tmp_path, client, session, monkeypatch):
+    """
+    
+    Testing uploading two the same file content
+    assert status code and quantity 
+
+    """
     monkeypatch.chdir(tmp_path)
     os.makedirs(tmp_path / "disc", exist_ok=True)
 
@@ -89,6 +108,45 @@ def test_upload_the_same_content(tmp_path, client, session, monkeypatch):
     (None, b"content", "application/pdf", 422), #missing file_name    
 ])
 def test_empty_value(client, file_name, content, file_type, expected_status_code):
+    """
+    
+    Testing missing or None values assert
+    assert status code
+
+    """
     res = client.post("/file/upload_file", files={"file": (file_name, content, file_type)})
     print(res.status_code)
     assert res.status_code == expected_status_code
+
+def test_delete_file(client, create_test_file, check_file_in_db):
+    """
+    
+    File deletion test
+    testing status_code and testing whether the file exists in the database
+
+    """
+    file_id = create_test_file['id']
+    res = client.delete(f"file/delete_file/{file_id}")
+    assert res.status_code == 200
+    file = check_file_in_db(file_id)
+    assert file == False
+
+def test_find_file_by_name(client, create_test_file):
+    """
+    
+    Test for finding file by name, enpoint return list of files,
+    testing correct status_code name id and content
+
+    """
+    file_name = create_test_file["file_name"]
+    file_id = create_test_file["id"]
+    file_content = create_test_file["hashed_content"]
+
+    res = client.get(f"/file/find_file/{file_name}")
+    assert res.status_code == 200
+
+    file_response = res.json()[0]
+
+    assert file_response["file_name"] == file_name
+    assert file_response['id'] == file_id
+    assert file_response['hashed_content'] == file_content
