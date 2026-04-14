@@ -36,6 +36,11 @@ def client(session):
 
 @pytest.fixture()
 def create_test_file(client, tmp_path, monkeypatch):
+    """
+
+    Create test file, add to database and on disc
+
+    """
     monkeypatch.chdir(tmp_path)
     os.makedirs(tmp_path / "disc", exist_ok=True)
 
@@ -50,7 +55,7 @@ def check_file_in_db(session):
     """
 
     Check if file exists in database:
-    file in database -> False
+    file in database -> True
     file is not in database -> False
 
     """
