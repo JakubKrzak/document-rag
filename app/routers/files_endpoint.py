@@ -1,7 +1,7 @@
 
 
 from fastapi import File, UploadFile, Depends, status, HTTPException, APIRouter
-from app.services import upload_file_logic, delete_file_logic, file_services 
+from app.services import file_delete_logic, upload_file_logic, file_services , file_parsed_content
 from app.schemas import schemas_file
 from database.database_engine import get_db
 from config.settings import ALLOWED_TYPES
@@ -37,12 +37,20 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: Session=Depends(ge
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"File |{file.filename}| exists")
     
     file_path = await upload_file_logic.save_file_on_disc(file_object=file, file_content_hash=file_content_hash)
+    #new
+    parsed_object = await file_parsed_content.parsed_file_content(file_path=file_path)
+    parsed_file_path = await file_parsed_content.save_parsed_file_on_disc(file_object=file, parsed_file=parsed_object)
+    
 
+    #end new
     file = upload_file_logic.add_file_to_database(file_name=file.filename,
                                            file_content_hash=file_content_hash,
                                            file_size=file.size,
                                            file_content_type=file.content_type,
-                                           file_path=file_path, db=db)
+                                           parsed_file_path=parsed_file_path,
+                                           file_path=file_path,
+                                           pages= len(parsed_object.pages),
+                                           db=db)
 
     return file
 
@@ -53,8 +61,8 @@ def delete_file_enpoint(file_id: str, db: Session=Depends(get_db)):
     if not file:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Not found file with id: {file_id}")
 
-    delete_file_logic.delete_file_from_db(file, db)
-    delete_file_logic.delete_file_from_disc(file)
+    file_delete_logic.delete_file_from_db(file, db)
+    file_delete_logic.delete_file_from_disc(file)
 
     return {"message": f"File id: {file_id} has been deleted"}
 
