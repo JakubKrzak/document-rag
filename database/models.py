@@ -13,5 +13,7 @@ class File(Base):
     hashed_content = Column(String, unique=True, nullable=False)
     file_size = Column(Integer, nullable=False)
     file_type = Column(String, nullable=False)
+    parsed_file_path = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
+    pages = Column(Integer, nullable=False)
     uploaded_at = Column(DateTime, default=datetime.now)
