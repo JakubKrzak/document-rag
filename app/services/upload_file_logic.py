@@ -23,7 +23,8 @@ async def save_file_on_disc(file_object, file_content_hash):
     Function saves file on disc and return file_path
 
     """
-    file_path = f"disc/{file_object.filename}_{file_content_hash[:8]}"
+    name, ext = file_object.filename.rsplit(".", 1)
+    file_path = f"disc/{name}_{file_content_hash[:8]}.{ext}"
 
     file_object.file.seek(0)
     with open(file_path, "wb") as b:
@@ -36,7 +37,9 @@ def add_file_to_database(file_name: str,
                          file_content_hash: str,
                          file_size: int,
                          file_content_type: str,
+                         parsed_file_path: str,
                          file_path: str,
+                         pages: int,
                          db: Session):
     
     """
@@ -49,7 +52,9 @@ def add_file_to_database(file_name: str,
                            hashed_content=file_content_hash,
                            file_size=file_size,
                            file_type=file_content_type,
-                           file_path=file_path)
+                           parsed_file_path=parsed_file_path,
+                           file_path=file_path,
+                           pages=pages)
     
     db.add(add_new_file_info)
     db.commit()
