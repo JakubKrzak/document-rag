@@ -1,11 +1,7 @@
-
-from ast import parse
-
 from docling.document_converter import DocumentConverter
 import asyncio
+from pathlib import Path
 
-from fastapi import Path
-from docling.document_converter import DocumentConverter
 
 
 async def parsed_file_content(file_path: Path):
@@ -14,7 +10,7 @@ async def parsed_file_content(file_path: Path):
     doc = result.document
     return doc
 
-async def save_parsed_file_on_disc(file_object, parsed_file: object):
+async def save_parsed_file_on_disc(parsed_file: object):
     file_path = f"parsed_disc/{parsed_file.name}.md"
     
     def _write():

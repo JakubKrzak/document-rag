@@ -9,3 +9,6 @@ def delete_file_from_db(file_object: models.File, db: Session):
 def delete_file_from_disc(file_object: models.File):
     if os.path.exists(file_object.file_path):
         os.remove(file_object.file_path)
+    
+    if os.path.exists(file_object.parsed_file_path):
+        os.remove(file_object.parsed_file_path)
