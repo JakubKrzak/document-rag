@@ -1,3 +1,5 @@
+from ast import parse
+
 from docling.document_converter import DocumentConverter
 import asyncio
 from pathlib import Path
@@ -17,7 +19,6 @@ async def save_parsed_file_on_disc(parsed_file: object):
         md = parsed_file.export_to_markdown()
         with open(file_path, "w") as f:
             f.write(md)
-    
     await asyncio.to_thread(_write)
 
     return file_path
