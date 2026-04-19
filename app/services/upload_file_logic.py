@@ -3,6 +3,8 @@ import shutil
 from sqlalchemy.orm import Session
 from database import models
 from utils import hash_file_content
+from app.logger.log_conf import get_logger
+logger = get_logger(__name__)
 
 def check_file_exists(file_content: bytes, db: Session):
     """
@@ -29,8 +31,9 @@ async def save_file_on_disc(file_object, file_content_hash):
     file_object.file.seek(0)
     with open(file_path, "wb") as b:
         await asyncio.to_thread(shutil.copyfileobj, file_object.file, b)
-    
+    logger.debug(f"file: {file_object.filename} written to {file_path}")
     return file_path
+
 
 
 def add_file_to_database(file_name: str,
