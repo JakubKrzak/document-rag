@@ -1,7 +1,7 @@
 
 
 from fastapi import File, UploadFile, Depends, status, HTTPException, APIRouter
-from app.services import file_delete_logic, upload_file_logic, file_services , file_parsed_content
+from app.services import file_delete_logic, upload_file_logic, file_services , file_parsed_content, file_chunk
 from app.schemas import schemas_file
 from database.database_engine import get_db
 from config.settings import ALLOWED_TYPES, DOCLING_ALLOWED_TYPES
@@ -39,20 +39,25 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: Session=Depends(ge
     
     try:
 
-        step = "zapis pliku na dysk"
-        logger.info(f"Rozpoczeto przetwarzanie pliku | {file.filename}")        
+        step = f"saving file on disc | file:{file.filename}"
+        logger.info(f"start file processing | file_name: {file.filename}")        
         file_path = await upload_file_logic.save_file_on_disc(file_object=file, file_content_hash=file_content_hash)
-        logger.info(f"Plik zapisany na dysku | {file.filename}")
+        logger.info(f"file saved on disc | {file.filename}")
 
-        step = "parsowanie pliku"
+        step = f"parsing file | file:{file.filename}"
         parsed_object = await file_parsed_content.parsed_file_content(file_path=file_path)
-        logger.info(f"Plik sparsowany | {file.filename} | stron: {len(parsed_object.pages)}")
+        logger.info(f"parsed file | file_name: {file.filename} | pages: {len(parsed_object.pages)} | size: {file.size}")
 
-        step = "zapis MD na dysku"
+        step = f"saving parsed file on disc | file:{file.filename}"
         parsed_file_path = await file_parsed_content.save_parsed_file_on_disc(parsed_file=parsed_object)
-        logger.info(f"Plik MD zapisany | {file.filename}")
+        logger.info(f"parsed file saved on disc | file_name:{file.filename}")
 
-        step = "zapis do bazy danych"
+        step = f"chunking document | file_name:{file.filename}"
+        chunks = await file_chunk.chunk_document(parsed_document=parsed_object)
+        logger.info(f"chunking file | file_name:{file.filename} | chunks:  {len(chunks)}")
+
+    
+        step = f"adding file to database | file_name:{file.filename}"
         file_db_info = upload_file_logic.add_file_to_database(file_name=file.filename,
                                             file_content_hash=file_content_hash,
                                             file_size=file.size,
@@ -61,12 +66,13 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: Session=Depends(ge
                                             file_path=file_path,
                                             pages= len(parsed_object.pages),
                                             db=db)
-        logger.info(f"Plik zapisany do bazy danych| {file_db_info.id}")
+        logger.info(f"file added to database| file_id{file_db_info.id} | file_name:{file.filename}")
+
 
         return file_db_info
     
     except Exception as e:
-        logger.exception(f"Blad na kroku = {step} | {file.filename} | {e}")
+        logger.exception(f"Error on step: {step} | file_name{file.filename} | {e}")
 
 
 @router.delete("/delete_file/{file_id}", status_code=status.HTTP_200_OK)
