@@ -1,6 +1,8 @@
 
 
 from fastapi import File, UploadFile, Depends, status, HTTPException, APIRouter
+from app import services
+from app.routers.db_health import db_connection
 from app.services import file_delete_logic, upload_file_logic, file_services , file_parsed_content, file_chunk
 from app.services.file_services import check_file_status
 from app.schemas import schemas_file
@@ -57,14 +59,31 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: Session=Depends(ge
                                                         file_size=file.size,
                                                         file_content_type=file.content_type,
                                                         file_path=file_path,
+                                                        status=FileStatus.UPLOADED,
                                                         db=db)
     file_id = file_db_info.id
-    file_services.update_file_status(file_id=file_id, status=FileStatus.UPLOADED)
+
     
 
+    """
+    
+    PARSED checkpoint:
+
+        parsed file content
+        saving parsed file content on disc
+
+    """
 
     parsed_object = await file_parsed_content.parsed_file_content(file_path=file_path)
     parsed_file_path = await file_parsed_content.save_parsed_file_on_disc(parsed_file=parsed_object)
+    file_services.add_parsed_info_to_db(file_id=file_id,
+                                        parsed_file_path=parsed_file_path,
+                                        pages=len(parsed_object.pages),
+                                        db=db)
+    
+    file_services.update_file_status(file_id=file_id,
+                                     status=FileStatus.PARSED,
+                                     db=db)
 
 
     chunks = await file_chunk.chunk_document(parsed_document=parsed_object)
@@ -76,7 +95,7 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: Session=Depends(ge
 
 
 
-        return file_db_info
+    return file_db_info
     
 
 
