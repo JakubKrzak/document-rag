@@ -1,10 +1,11 @@
 
 
 from fastapi import File, UploadFile, Depends, status, HTTPException, APIRouter
+from sqlalchemy.util import update_copy
 from app import services
 from app.routers.db_health import db_connection
 from app.services import file_delete_logic, upload_file_logic, file_services , file_parsed_content, file_chunk
-from app.services.file_services import check_file_status
+from app.services.file_services import check_file_status, update_file_status
 from app.schemas import schemas_file
 from database.database_engine import get_db
 from config.settings import ALLOWED_TYPES, DOCLING_ALLOWED_TYPES
@@ -85,10 +86,17 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: Session=Depends(ge
                                      status=FileStatus.PARSED,
                                      db=db)
 
-
-    chunks = await file_chunk.chunk_document(parsed_document=parsed_object)
-
+    """
     
+    CHUNKED checkpoint
+
+        chunking file
+        save chunked file on disc
+    
+    """
+    chunks = await file_chunk.chunk_document(parsed_document=parsed_object)
+    file_chunk.save_chunks_on_disc(chunks=chunks)
+    update_file_status(file_id=file_id, status=FileStatus.CHUNKED, db=db)
 
     
 
