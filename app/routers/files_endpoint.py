@@ -2,11 +2,13 @@
 
 from fastapi import File, UploadFile, Depends, status, HTTPException, APIRouter
 from app.services import file_delete_logic, upload_file_logic, file_services , file_parsed_content, file_chunk
+from app.services.file_services import check_file_status
 from app.schemas import schemas_file
 from database.database_engine import get_db
 from config.settings import ALLOWED_TYPES, DOCLING_ALLOWED_TYPES
 from sqlalchemy.orm import Session
 from app.logger.log_conf import get_logger
+from database.models import FileStatus
 logger = get_logger(__name__)
 
 router = APIRouter(
@@ -37,42 +39,46 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: Session=Depends(ge
     if file_exists:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"File |{file.filename}| exists")
     
-    try:
+    
+    """
+    
+    UPLOADED checkpoint:
+    
+        saving file on disc
+        add file to database
+        updated file status to UPLOADED
+    
+    """
+    # Save file on disc
+    file_path = await upload_file_logic.save_file_on_disc(file_object=file, file_content_hash=file_content_hash)
+    # Add file info to db
+    file_db_info = upload_file_logic.add_file_to_database(file_name=file.filename,
+                                                        file_content_hash=file_content_hash,
+                                                        file_size=file.size,
+                                                        file_content_type=file.content_type,
+                                                        file_path=file_path,
+                                                        db=db)
+    file_id = file_db_info.id
+    file_services.update_file_status(file_id=file_id, status=FileStatus.UPLOADED)
+    
 
-        step = f"saving file on disc | file:{file.filename}"
-        logger.info(f"start file processing | file_name: {file.filename}")        
-        file_path = await upload_file_logic.save_file_on_disc(file_object=file, file_content_hash=file_content_hash)
-        logger.info(f"file saved on disc | {file.filename}")
 
-        step = f"parsing file | file:{file.filename}"
-        parsed_object = await file_parsed_content.parsed_file_content(file_path=file_path)
-        logger.info(f"parsed file | file_name: {file.filename} | pages: {len(parsed_object.pages)} | size: {file.size}")
+    parsed_object = await file_parsed_content.parsed_file_content(file_path=file_path)
+    parsed_file_path = await file_parsed_content.save_parsed_file_on_disc(parsed_file=parsed_object)
 
-        step = f"saving parsed file on disc | file:{file.filename}"
-        parsed_file_path = await file_parsed_content.save_parsed_file_on_disc(parsed_file=parsed_object)
-        logger.info(f"parsed file saved on disc | file_name:{file.filename}")
 
-        step = f"chunking document | file_name:{file.filename}"
-        chunks = await file_chunk.chunk_document(parsed_document=parsed_object)
-        logger.info(f"chunking file | file_name:{file.filename} | chunks:  {len(chunks)}")
+    chunks = await file_chunk.chunk_document(parsed_document=parsed_object)
 
     
-        step = f"adding file to database | file_name:{file.filename}"
-        file_db_info = upload_file_logic.add_file_to_database(file_name=file.filename,
-                                            file_content_hash=file_content_hash,
-                                            file_size=file.size,
-                                            file_content_type=file.content_type,
-                                            parsed_file_path=parsed_file_path,
-                                            file_path=file_path,
-                                            pages= len(parsed_object.pages),
-                                            db=db)
-        logger.info(f"file added to database| file_id{file_db_info.id} | file_name:{file.filename}")
+
+    
+
+
 
 
         return file_db_info
     
-    except Exception as e:
-        logger.exception(f"Error on step: {step} | file_name{file.filename} | {e}")
+
 
 
 @router.delete("/delete_file/{file_id}", status_code=status.HTTP_200_OK)
