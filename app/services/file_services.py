@@ -22,3 +22,30 @@ def check_file_status(id: str, status: models.FileStatus, db: Session):
         return False
 
     return file.status == status
+
+
+def update_file_status(file_id: str, status: models.FileStatus, db: Session):
+    """
+    
+    Function for update file status, 
+    status is enum model, status:
+    UPLOADED
+    PARSED
+    CHUNKED
+    EMBEDDED
+    COMPLETED
+
+    Args:
+        file_id: file id
+        status: file status
+    
+    Returns:
+        True if status was changed
+    
+    """
+
+    file = find_file_by_id(file_id, db)
+    file.status = status
+    db.commit()
+
+    return True
