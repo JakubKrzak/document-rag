@@ -40,9 +40,8 @@ def add_file_to_database(file_name: str,
                          file_content_hash: str,
                          file_size: int,
                          file_content_type: str,
-                         parsed_file_path: str,
                          file_path: str,
-                         pages: int,
+                         status: models.FileStatus,
                          db: Session):
     
     """
@@ -51,16 +50,16 @@ def add_file_to_database(file_name: str,
 
     """
 
-    add_new_file_info = models.File(file_name=file_name,
+    file = models.File(file_name=file_name,
                            hashed_content=file_content_hash,
                            file_size=file_size,
                            file_type=file_content_type,
-                           parsed_file_path=parsed_file_path,
                            file_path=file_path,
-                           pages=pages)
-    
-    db.add(add_new_file_info)
-    db.commit()
-    db.refresh(add_new_file_info)
+                           status=models.FileStatus.UPLOADED)
 
-    return add_new_file_info
+    
+    db.add(file)
+    db.commit()
+    db.refresh(file)
+
+    return file
