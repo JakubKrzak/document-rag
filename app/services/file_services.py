@@ -1,30 +1,29 @@
-import enum
-
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from database import models
-
 from ..schemas import schemas_file
 
-def find_file_by_id(file_id: str, db: Session):
-    return db.query(models.File).filter(models.File.id == file_id).first()
+async def find_file_by_id(file_id: str, db: AsyncSession):
+    result = await db.execute(select(models.File).where(models.File.id == file_id))
+    return result.scalar_one_or_none()
 
-def find_file_by_name(file_name: str, db: Session):
-    return db.query(models.File).filter(models.File.file_name == file_name).all()
+async def find_file_by_name(file_name: str, db: AsyncSession):
+    result = await db.execute(select(models.File).where(models.File.file_name == file_name))
+    return result.scalars().all()
 
-def get_all_files(db: Session) -> list[schemas_file.FileResponse]:
-    return db.query(models.File).all()
+async def get_all_files(db: AsyncSession) -> list[schemas_file.FileResponse]:
+    result = await db.execute(select(models.File))
+    return result.scalars().all()
 
-def check_file_status(id: str, status: models.FileStatus, db: Session):
-    file = db.query(models.File).filter(models.File.id == id).first()
+async def check_file_status(file_id: str, status: models.FileStatus, db: AsyncSession):
+    file = await find_file_by_id(file_id=file_id, db=db)
 
     if file is None:
         return False
 
-    return file.status == status
+    return file.status == status 
 
-
-def update_file_status(file_id: str, status: models.FileStatus, db: Session):
+async def update_file_status(file_id: str, status: models.FileStatus, db: AsyncSession):
     """
     
     Function for update file status, 
@@ -44,8 +43,14 @@ def update_file_status(file_id: str, status: models.FileStatus, db: Session):
     
     """
 
-    file = find_file_by_id(file_id, db)
+    file = await find_file_by_id(file_id, db)
     file.status = status
-    db.commit()
+    await db.commit()
+    return True
 
+async def add_parsed_info_to_db(file_id: str, parsed_file_path: str, pages: int, db: AsyncSession):
+    file = await find_file_by_id(file_id, db)
+    file.parsed_file_path = parsed_file_path
+    file.pages = pages
+    await db.commit()
     return True
