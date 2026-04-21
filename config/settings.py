@@ -13,4 +13,30 @@ class Settings(BaseSettings):
 
 settings = Settings() 
 
-ALLOWED_TYPES = {"application/pdf", "text/plain", "image/png"}
+ALLOWED_TYPES = {                                                              
+    "application/pdf",                                                         
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    # .docx                                                                       
+                                                                               
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",  
+    #.pptx 
+
+      "text/html",                                                               
+      "text/plain",                                                      
+      "image/png",
+      "image/jpeg",
+      "image/tiff",                                                              
+      "image/bmp",
+  }                                                                              
+                                                                               
+DOCLING_ALLOWED_TYPES = {
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                                                                 
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "text/html",                                                               
+      "image/png",                                                             
+      "image/jpeg",
+      "image/tiff",
+      "image/bmp",                                                               
+  }
