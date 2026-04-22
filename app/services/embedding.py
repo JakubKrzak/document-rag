@@ -6,7 +6,7 @@ from docling_core.transforms.chunker import BaseChunker
 
 model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=False)
 
-def load_chunks_from_disc(path: Path) -> list[BaseChunker]:
+def load_chunks_from_disk(path: Path) -> list[BaseChunker]:
     chunks = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
@@ -15,7 +15,7 @@ def load_chunks_from_disc(path: Path) -> list[BaseChunker]:
     
     return chunks
 
-def embedding_model(chunk: str) -> list[float]:
+def embed_chunk(chunk) -> list[float]:
     chunk_text = chunk["text"]
     vectors = model.encode(sentences=chunk_text,
                            batch_size=10,
@@ -43,12 +43,12 @@ def create_point(chunk, vectors: list[float], number: int) -> dict:
                         
     return point
 
-def embedded_chunks(path: Path) -> list[dict]:
+def build_point(path: Path) -> list[dict]:
     chunks = load_chunks_from_disc(path=path)
-    embedded_finish = []
+    points = []
     for i, chunk in enumerate(chunks):
-        vectors = embedding_model(chunk)
+        vectors = embed_chunk(chunk)
         point = create_point(chunk, vectors, i)
-        embedded_finish.append(point)
+        points.append(point)
     
-    return embedded_finish
+    return points
