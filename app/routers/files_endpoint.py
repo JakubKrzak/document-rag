@@ -1,5 +1,5 @@
 from fastapi import File, UploadFile, Depends, status, HTTPException, APIRouter
-from app.services import file_delete_logic, upload_file_logic, file_services , file_parsed_content, file_chunk
+from app.services import file_delete_logic, upload_file_logic, file_services , file_parsed_content, file_chunk, embedding
 from app.services.file_services import update_file_status
 from app.schemas import schemas_file
 from database.database_engine import get_db
@@ -71,7 +71,9 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: AsyncSession=Depen
     """
 
     parsed_object = await file_parsed_content.parsed_file_content(file_path=file_path)
+
     parsed_file_path = await file_parsed_content.save_parsed_file_on_disc(parsed_file=parsed_object)
+
     await file_services.add_parsed_info_to_db(file_id=file_id,
                                         parsed_file_path=parsed_file_path,
                                         pages=len(parsed_object.pages),
@@ -90,9 +92,20 @@ async def upload_file_enpoint(file: UploadFile=File(...), db: AsyncSession=Depen
     
     """
     chunks = await file_chunk.chunk_document(parsed_document=parsed_object)
+
     chunks_file_path = await file_chunk.save_chunks_on_disc(chunks=chunks)
+
     await update_file_status(file_id=file_id, status=FileStatus.CHUNKED, db=db)
+
     await file_chunk.add_chunked_info_to_db(file_id=file_id, chunks=chunks, chunks_file_path=chunks_file_path, db=db)
+    chunks_to_dict = [chunk.model_dump() for chunk in chunks]
+    """
+
+    EMBEDDED checkpoint
+
+    """
+    points = await embedding.build_point(chunks=chunks_to_dict)
+    await update_file_status(file_id=file_id, status=FileStatus.EMBEDDED, db=db)
 
     return file_db_info
     
