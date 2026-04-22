@@ -27,4 +27,5 @@ class File(Base):
     pages = Column(Integer, nullable=True)
     uploaded_at = Column(DateTime, default=datetime.now)
     chunks_path = Column(String, nullable=True)
+    chunks_number = Column(Integer, nullable=True)
     status = Column(Enum(FileStatus), nullable=False)

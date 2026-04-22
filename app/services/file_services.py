@@ -19,7 +19,7 @@ async def check_file_status(file_id: str, status: models.FileStatus, db: AsyncSe
     file = await find_file_by_id(file_id=file_id, db=db)
 
     if file is None:
-        return False
+        return None
 
     return file.status == status 
 
@@ -46,6 +46,7 @@ async def update_file_status(file_id: str, status: models.FileStatus, db: AsyncS
     file = await find_file_by_id(file_id, db)
     file.status = status
     await db.commit()
+    await db.refresh(file)
     return True
 
 async def add_parsed_info_to_db(file_id: str, parsed_file_path: str, pages: int, db: AsyncSession):
@@ -53,4 +54,5 @@ async def add_parsed_info_to_db(file_id: str, parsed_file_path: str, pages: int,
     file.parsed_file_path = parsed_file_path
     file.pages = pages
     await db.commit()
+    await db.refresh(file)
     return True

@@ -1,10 +1,6 @@
-from ast import parse
-
 from docling.document_converter import DocumentConverter
 import asyncio
 from pathlib import Path
-
-
 
 async def parsed_file_content(file_path: Path):
     file_converter = DocumentConverter()

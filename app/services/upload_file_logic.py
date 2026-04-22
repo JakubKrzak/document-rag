@@ -1,12 +1,14 @@
 import asyncio
+
 import shutil
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from database import models
 from utils import hash_file_content
 from app.logger.log_conf import get_logger
 logger = get_logger(__name__)
 
-def check_file_exists(file_content: bytes, db: Session):
+async def check_file_exists(file_content: bytes, db: AsyncSession):
     """
 
     Function for hash file content and check if file exists in db
@@ -15,8 +17,10 @@ def check_file_exists(file_content: bytes, db: Session):
     """
 
     file_content_hash = hash_file_content.hash_file_content(file_content)
-    file_exists = db.query(models.File).filter(models.File.hashed_content == file_content_hash).first()
-    return file_exists, file_content_hash
+    file = await db.execute(select(models.File).where(models.File.hashed_content == file_content_hash))
+
+
+    return file.scalar_one_or_none(), file_content_hash
 
 
 async def save_file_on_disc(file_object, file_content_hash):
@@ -36,13 +40,13 @@ async def save_file_on_disc(file_object, file_content_hash):
 
 
 
-def add_file_to_database(file_name: str,
+async def add_file_to_database(file_name: str,
                          file_content_hash: str,
                          file_size: int,
                          file_content_type: str,
                          file_path: str,
                          status: models.FileStatus,
-                         db: Session):
+                         db: AsyncSession):
     
     """
     
@@ -59,7 +63,6 @@ def add_file_to_database(file_name: str,
 
     
     db.add(file)
-    db.commit()
-    db.refresh(file)
-
+    await db.commit()
+    await db.refresh(file)
     return file

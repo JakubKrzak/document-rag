@@ -21,7 +21,7 @@ def test_upload_file_succes(client, session, tmp_path, monkeypatch):
     expected_hash = '28c44fd3120551ce87b2825d23faafa468882eb56918c57ce38897049694e950'
 
     response = client.post("/file/upload_file",
-                            files={"file": ("test.txt", file_content, "text/plain")})
+                            files={"file": ("test.pdf", file_content, "text/plain")})
     
     assert response.status_code == 201
 
