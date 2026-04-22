@@ -3,8 +3,14 @@ import json
 from FlagEmbedding import BGEM3FlagModel
 from pathlib import Path
 from docling_core.transforms.chunker import BaseChunker
+import asyncio
+_model = None
 
-model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=False)
+def get_model():
+    global _model
+    if _model is None:
+        _model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=False)
+    return _model
 
 def load_chunks_from_disk(path: Path) -> list[BaseChunker]:
     chunks = []
@@ -15,12 +21,16 @@ def load_chunks_from_disk(path: Path) -> list[BaseChunker]:
     
     return chunks
 
-def embed_chunk(chunk) -> list[float]:
+async def embed_chunk(chunk) -> list[float]:
     chunk_text = chunk["text"]
-    vectors = model.encode(sentences=chunk_text,
-                           batch_size=10,
-                           max_length=8000,
-                           return_dense=True)
+    vectors = await asyncio.to_thread(
+        get_model().encode,
+        sentences=chunk_text,
+        batch_size=10,
+        max_length=8000,
+        return_dense=True
+    )
+
     return vectors["dense_vecs"]
 
 def create_point(chunk, vectors: list[float], number: int) -> dict:
@@ -33,21 +43,20 @@ def create_point(chunk, vectors: list[float], number: int) -> dict:
     point_name = f"{Path(chunk_file_name).stem}_chunk_{number}"
 
     point = {}
-    point["vector"] = vectors
+    point["vector"] = vectors.tolist()
     point["payload"] = {"text": chunk["text"],
                         "file_name": chunk_file_name,
                         "point_name": point_name,
                         "page": page_number,
                         "mime_type": mimetype,
-                        "label": label}
+                        "label": label.value}
                         
     return point
 
-def build_point(path: Path) -> list[dict]:
-    chunks = load_chunks_from_disc(path=path)
+async def build_point(chunks: list[dict]) -> list[dict]:
     points = []
     for i, chunk in enumerate(chunks):
-        vectors = embed_chunk(chunk)
+        vectors = await embed_chunk(chunk)
         point = create_point(chunk, vectors, i)
         points.append(point)
     
