@@ -133,3 +133,5 @@ async def delete_all_files_endpoint(db: AsyncSession=Depends(get_db)):
     for file in files_list:
         await file_delete_logic.delete_file_from_disc(file)
         await file_delete_logic.delete_file_from_db(file, db)
+    
+    return {"message": "files delete"}
