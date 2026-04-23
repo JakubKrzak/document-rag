@@ -61,3 +61,15 @@ async def build_point(chunks: list[dict]) -> list[dict]:
         points.append(point)
     
     return points
+
+async def save_points_on_disk(points: list[dict]):
+    name = Path(points[0]["payload"]["file_name"])
+    path = f"embed_disk/{name.stem}.jsonl"
+
+    def _write(points, path):
+        with open(path, "w", encoding="utf-8") as f:
+            for point in points:
+                f.write(json.dumps(point, ensure_ascii=False) + "\n")
+
+    await asyncio.to_thread(_write, points, path) 
+    return path
