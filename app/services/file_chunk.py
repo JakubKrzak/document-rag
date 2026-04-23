@@ -33,7 +33,7 @@ async def save_chunks_on_disc(chunks: list[BaseChunker]):
     if not chunks:
         return 
     
-    def save_(chunks: list[BaseChunker]) -> Path:
+    def _save(chunks: list[BaseChunker]) -> Path:
         name = Path(chunks[0].meta.origin.filename)
         path = f"chunks_disc/{name.stem}.jsonl"
         with open(path, "w", encoding="utf-8") as f:
@@ -41,7 +41,7 @@ async def save_chunks_on_disc(chunks: list[BaseChunker]):
                 f.write(json.dumps(chunk.model_dump(), ensure_ascii=False) + "\n")
         return path
 
-    chunks_file_path = await asyncio.to_thread(save_, chunks)
+    chunks_file_path = await asyncio.to_thread(_save, chunks)
     return chunks_file_path
 
 
