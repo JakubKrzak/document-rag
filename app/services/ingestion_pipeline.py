@@ -1,5 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.services import file_parsed_content
 from database.models import FileStatus
+from database.database_engine import SessionLocal
 
 #upload functions
 from app.services.upload import save_file_on_disc, add_file_to_database
@@ -47,4 +49,16 @@ async def run_embed(file_id, chunks, db:AsyncSession):
     await add_embed_info_to_db(file_id=file_id, embed_path=embed_path,
                                vectors_dim=vectors_dim, db=db)
     await update_file_status(file_id=file_id, status=FileStatus.EMBEDDED, db=db)
+    return points
+
+async def background_ingestion_pipeline(file_id: str, file_path: str):
+    async with SessionLocal() as db:
+        parsed_object = await run_parse(file_id=file_id,
+                                        file_path=file_path, db=db)
+        
+        chunks = await run_chunk(file_id=file_id,
+                                 parsed_object=parsed_object, db=db)
+    
+        points = await run_embed(file_id=file_id,
+                                 chunks=chunks, db=db)
     
