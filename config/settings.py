@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     database_name: str
     database_username: str
 
+    qdrant_host: str
+    qdrant_port: int
+
     class Config:
         env_file = ".env"
 
