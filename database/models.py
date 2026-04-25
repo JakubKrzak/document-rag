@@ -28,4 +28,6 @@ class File(Base):
     uploaded_at = Column(DateTime, default=datetime.now)
     chunks_path = Column(String, nullable=True)
     chunks_number = Column(Integer, nullable=True)
+    embed_path = Column(String, nullable=True)
+    vectors_dim = Column(Integer, nullable=True)
     status = Column(Enum(FileStatus), nullable=False)
