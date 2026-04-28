@@ -15,6 +15,8 @@ from app.services.chunking import chunk_document, save_chunks_on_disc, add_chunk
 #embedding functions
 from app.services.embedding import build_point, save_points_on_disk, add_embed_info_to_db, check_vectors_dim
 
+#upsert db
+from app.services.vector_storage import upser_points
 #shared functions
 from app.services.shared import update_file_status
 
@@ -26,7 +28,7 @@ async def run_upload(file, file_content_hash, db:AsyncSession):
         file_path=file_path, status=FileStatus.UPLOADED, db=db)
     return file_db_info, file_path
 
-async def run_parse(file_id, file_path, db:AsyncSession):
+async def run_parse(file_id: int, file_path, db:AsyncSession):
     parsed_object = await parsed_file_content(file_path=file_path)
     parsed_file_path = await save_parsed_file_on_disc(parsed_file=parsed_object)
     await add_parsed_info_to_db(file_id=file_id, parsed_file_path=parsed_file_path,
@@ -34,7 +36,7 @@ async def run_parse(file_id, file_path, db:AsyncSession):
     await update_file_status(file_id=file_id, status=FileStatus.PARSED, db=db)
     return parsed_object
 
-async def run_chunk(file_id, parsed_object, db:AsyncSession):
+async def run_chunk(file_id: int, parsed_object, db:AsyncSession):
     chunks = await chunk_document(parsed_document=parsed_object)
     chunks_file_path = await save_chunks_on_disc(chunks=chunks)
     await add_chunked_info_to_db(file_id=file_id, chunks=chunks,
@@ -42,7 +44,7 @@ async def run_chunk(file_id, parsed_object, db:AsyncSession):
     await update_file_status(file_id=file_id, status=FileStatus.CHUNKED, db=db)
     return [chunk.model_dump() for chunk in chunks]
 
-async def run_embed(file_id, chunks, db:AsyncSession):
+async def run_embed(file_id: int, chunks, db:AsyncSession):
     points = await build_point(chunks=chunks)
     embed_path = await save_points_on_disk(points=points)
     vectors_dim = check_vectors_dim(points=points)
@@ -50,6 +52,11 @@ async def run_embed(file_id, chunks, db:AsyncSession):
                                vectors_dim=vectors_dim, db=db)
     await update_file_status(file_id=file_id, status=FileStatus.EMBEDDED, db=db)
     return points
+
+
+async def run_insert(file_id: int ,points, collection_name: str, db:AsyncSession):
+    await upser_points(points=points, collection_name=collection_name)
+    await update_file_status(file_id=file_id, status=FileStatus.COMPLETED, db=db)
 
 async def background_ingestion_pipeline(file_id: str, file_path: str):
     async with SessionLocal() as db:
@@ -61,4 +68,8 @@ async def background_ingestion_pipeline(file_id: str, file_path: str):
     
         points = await run_embed(file_id=file_id,
                                  chunks=chunks, db=db)
-    
+        
+        await run_insert(file_id=file_id,
+                         points=points,
+                         collection_name="hobbit",
+                         db=db)
