@@ -10,7 +10,7 @@ async def delete_file_from_db(file_object: models.File, db: AsyncSession):
 
 async def delete_file_from_disc(file_object: models.File):
 
-    def delete_(file_object: models.File):
+    def _delete(file_object: models.File):
         if os.path.exists(file_object.file_path):
             os.remove(file_object.file_path)
     
@@ -22,6 +22,6 @@ async def delete_file_from_disc(file_object: models.File):
 
             #chunks_disc/pdf_test_5692a551.jsonl
             #chunks_disc/pdf_test_5692a551.jsonl
-    await asyncio.to_thread(delete_, file_object)
+    await asyncio.to_thread(_delete, file_object)
 
 
