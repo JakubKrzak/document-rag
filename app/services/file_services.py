@@ -56,3 +56,11 @@ async def add_parsed_info_to_db(file_id: str, parsed_file_path: str, pages: int,
     await db.commit()
     await db.refresh(file)
     return True
+
+async def add_embed_info_to_db(file_id: str, embed_path: str, vectors_dim: int, db: AsyncSession):
+    file = await find_file_by_id(file_id=file_id, db=db)
+    file.embed_path = embed_path
+    file.vectors_dim = vectors_dim
+    await db.commit()
+    await db.refresh(file)
+    return True
