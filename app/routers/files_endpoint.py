@@ -57,10 +57,10 @@ async def upload_file_enpoint(background_tasks: BackgroundTasks, file: UploadFil
     return {f"file_id = {file_id}": file_db_info}
    
     
-@router.get("/file_status/{file_id}", status_code=status.HTTP_200_OK ,response_model=schemas_file.FileResponse)
+@router.get("/file_status/{file_id}", status_code=status.HTTP_200_OK)
 async def check_file_status(file_id: str, db:AsyncSession=Depends(get_db)):
     file =  await find_file_by_id(file_id=file_id, db=db)
-    return file
+    return {f"file_id: {file.id}": file.status}
 
 
 @router.delete("/delete_file/{file_id}", status_code=status.HTTP_200_OK)
