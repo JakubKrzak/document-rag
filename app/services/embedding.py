@@ -73,3 +73,7 @@ async def save_points_on_disk(points: list[dict]):
 
     await asyncio.to_thread(_write, points, path) 
     return path
+
+def check_vectors_dim(points: list[dict]):
+    vector = points[0]["vector"]
+    return len(vector)
