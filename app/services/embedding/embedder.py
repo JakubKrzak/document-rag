@@ -1,3 +1,5 @@
+from app.services.shared.errors import ChunksEmptyError, EmptyPointsError, EmptyVectorsError
+
 from .model import get_model
 from pathlib import Path
 import asyncio
@@ -35,10 +37,21 @@ def create_point(chunk, vectors: list[float], number: int) -> dict:
     return point
 
 async def build_point(chunks: list[dict]) -> list[dict]:
+    file_name = chunks[0]["meta"]["origin"]["filename"]
+    if not chunks:
+        raise ChunksEmptyError(file_name=file_name)
+    
     points = []
     for i, chunk in enumerate(chunks):
         vectors = await embed_chunk(chunk)
+
+        if vectors is None or len(vectors) == 0:
+            raise EmptyVectorsError(file_name=file_name)
+
         point = create_point(chunk, vectors, i)
         points.append(point)
+
+    if not points:
+        raise EmptyPointsError(file_name = file_name)
     
     return points
