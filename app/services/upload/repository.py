@@ -1,4 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
+from app.services.shared.errors import AddFileToDataBaseError
 from utils import hash_file_content
 from sqlalchemy import select
 from database import models
@@ -39,7 +41,12 @@ async def add_file_to_database(file_name: str,
                            status=models.FileStatus.UPLOADED)
 
     
-    db.add(file)
-    await db.commit()
-    await db.refresh(file)
+    try:
+        db.add(file)
+        await db.commit()
+        await db.refresh(file)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise AddFileToDataBaseError(file_name=file_name)
+    
     return file
